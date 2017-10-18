@@ -594,6 +594,7 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
                            egraph::PsiGraph, edges::Vector{IntervalValue};
                            geometric_mean::Bool=false)
    iset = IntSet()
+   ilength,elength = 0,0
    for edg in edges
       for i in 1:length(igraph.nodes)
          if edg in igraph.nodes[i]
@@ -614,6 +615,7 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
             idx = first( iset )
             if geometric_mean
                igraph.count[idx] = igraph.count[idx] > 0 ? igraph.count[idx] * edg.value : edg.value
+               ilength += 1
             else
                igraph.count[idx] += edg.value
             end
@@ -621,6 +623,7 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
             idx = first( iset ) - length(igraph.nodes)
             if geometric_mean
                egraph.count[idx] = egraph.count[idx] > 0 ? egraph.count[idx] * edg.value : edg.value
+               elength += 1
             else
                egraph.count[idx] += edg.value
             end
@@ -644,10 +647,10 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
    end
    if geometric_mean
       for i in 1:length(igraph.nodes)
-         igraph.count[i] = (igraph.count[i] ^ (1/igraph.length[i])) * igraph.length[i]
+         igraph.count[i] = (igraph.count[i] ^ (1/ilength)) * ilength
       end
       for i in 1:length(egraph.nodes)
-         egraph.count[i] = (egraph.count[i] ^ (1/egraph.length[i])) * egraph.length[i]
+         egraph.count[i] = (egraph.count[i] ^ (1/elength)) * elength
       end
    end
 end
