@@ -591,7 +591,8 @@ end
 
 # add_edge_counts! for two graphs, inc_graph and exc_graph! (used in spliced events)
 function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
-                           egraph::PsiGraph, edges::Vector{IntervalValue} )
+                           egraph::PsiGraph, edges::Vector{IntervalValue};
+                           geometric_mean::Bool=false)
    iset = IntSet()
    for edg in edges
       for i in 1:length(igraph.nodes)
@@ -611,10 +612,18 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
       if length( iset ) == 1
          if first( iset ) <= length(igraph.nodes)
             idx = first( iset )
-            igraph.count[idx] += edg.value
+            if geometric_mean
+               igraph.count[idx] = igraph.count[idx] > 0 ? igraph.count[idx] * edg.value : edg.value
+            else
+               igraph.count[idx] += edg.value
+            end
          else
             idx = first( iset ) - length(igraph.nodes)
-            egraph.count[idx] += edg.value
+            if geomtric_mean
+               egraph.count[idx] = egraph.count[idx] > 0 ? egraph.count[idx] * edg.value : edg.value
+            else
+               egraph.count[idx] += edg.value
+            end
          end
       else
          exists = false
@@ -632,6 +641,14 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
          end
       end
       empty!( iset )
+   end
+   if geometric_mean
+      for i in 1:length(igraph.nodes)
+         igraph.count[i] = (igraph.count[i] ^ (1/igraph.length[i])) * igraph.length[i]
+      end
+      for i in 1:length(egraph.nodes)
+         egraph.count[i] = (egraph.count[i] ^ (1/egraph.length[i])) * egraph.length[i]
+      end
    end
 end
 
@@ -769,7 +786,8 @@ function _process_spliced( sg::SpliceGraph, sgquant::SpliceGraphQuant,
       exc_graph = Nullable( reduce_graph( exc_graph.value ) )
 
       add_edge_counts!( ambig_cnt.value, inc_graph.value, 
-                        exc_graph.value, get(ambig_edge) )
+                        exc_graph.value, get(ambig_edge),
+                        geometric_mean=complexity(inc_graph.value, exc_graph.value) == 1)
 
       if isnodeok
          add_node_counts!( ambig_cnt.value, inc_graph.value, exc_graph.value, sgquant, bias )
