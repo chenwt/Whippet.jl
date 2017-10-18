@@ -619,7 +619,7 @@ function add_edge_counts!( ambig::Vector{AmbigCounts}, igraph::PsiGraph,
             end
          else
             idx = first( iset ) - length(igraph.nodes)
-            if geomtric_mean
+            if geometric_mean
                egraph.count[idx] = egraph.count[idx] > 0 ? egraph.count[idx] * edg.value : edg.value
             else
                egraph.count[idx] += edg.value
